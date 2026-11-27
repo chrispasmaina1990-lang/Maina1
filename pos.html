@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Maina Accessories - POS</title>
+<style>
+*{box-sizing:border-box;font-family:Arial}body{margin:0;background:#f3f3f3}
+header{background:#111;color:#fff;padding:14px;text-align:center;position:sticky;top:0;z-index:10}
+header h1{margin:0;font-size:22px}header p{margin:2px;color:#ffd700;font-size:13px}
+.wrap{display:flex;flex-wrap:wrap;gap:12px;padding:12px;max-width:1100px;margin:auto}
+.products{flex:2;min-width:280px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.card{background:#fff;border-radius:12px;padding:10px;text-align:center;box-shadow:0 2px 6px #0001}
+.card .em{font-size:36px}.card b{display:block;margin:6px 0 2px}.card span{color:#666;font-size:13px}
+.card button{width:100%;margin-top:8px;padding:9px;border:0;border-radius:8px;background:#111;color:#fff;font-weight:bold}
+.cart{flex:1;min-width:280px;background:#fff;border-radius:12px;padding:14px;height:fit-content;position:sticky;top:70px}
+.cart h3{margin:0 0 10px}.item{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #eee;font-size:14px}
+.item button{border:0;background:#ffe0e0;border-radius:6px;padding:4px 8px}
+.total{font-size:20px;font-weight:bold;display:flex;justify-content:space-between;margin:12px 0}
+input,select{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;margin:5px 0}
+.pay{width:100%;padding:13px;border:0;border-radius:10px;background:#25D366;color:#fff;font-weight:bold;font-size:16px}
+.clear{width:100%;padding:10px;border:0;background:#eee;border-radius:10px;margin-top:8px}
+.badge{display:inline-block;background:#ffd700;padding:3px 8px;border-radius:20px;font-size:12px}
+@media(max-width:700px){.cart{position:static}}
+</style></head>
+<body>
+<header><h1>✨ MAINA ACCESSORIES ✨</h1><p>Mombasa • POS • M-Pesa Accepted</p><span class="badge" id="todaySales">Mauzo Leo: KSh 0</span></header>
+<div class="wrap">
+<div class="products" id="products"></div>
+<div class="cart">
+<h3>🛒 Kikapu <span id="count">0</span></h3>
+<div id="cartList"><p style="color:#888">Hakuna bidhaa bado. Bonyeza bidhaa kuongeza.</p></div>
+<div class="total"><span>Jumla:</span><span id="total">KSh 0</span></div>
+<input id="cust" placeholder="Jina la mteja (hiari)">
+<select id="payMethod"><option value="M-Pesa">M-Pesa</option><option value="Cash">Cash</option><option value="Card">Card</option></select>
+<input id="paid" type="number" placeholder="Pesa aliyolipa (Cash)">
+<button class="pay" onclick="checkout()">✅ LIPIA • PRINT RISITI</button>
+<button class="clear" onclick="clearCart()">Futa Kikapu</button>
+<hr><h3>📊 Mauzo ya Leo</h3><div id="history" style="font-size:13px;color:#444"></div>
+<button class="clear" onclick="clearHistory()">Futa Historia</button>
+</div></div>
+<script>
+const products=[
+{name:"Sunglasses",price:800,em:"🕶️"},{name:"Wrist Watch",price:1500,em:"⌚"},
+{name:"Necklace",price:600,em:"📿"},{name:"Earrings",price:350,em:"💎"},
+{name:"Handbag",price:1800,em:"👜"},{name:"Cap",price:700,em:"🧢"},
+{name:"Belt",price:500,em:"➰"},{name:"Bracelet",price:400,em:"🔗"},
+{name:"Ring",price:300,em:"💍"},{name:"Wallet",price:900,em:"👛"},
+{name:"Hair Clip",price:250,em:"🎀"},{name:"Scarf",price:650,em:"🧣"},
+{name:"Perfume",price:1200,em:"🧴"},{name:"Phone Cover",price:550,em:"📱"},
+{name:"AirPods / Earbuds",price:2200,em:"🎧"},{name:"Hair Band",price:200,em:"👑"},
+];
+let cart={};
+let sales=JSON.parse(localStorage.getItem('maina_sales')||'[]');
+function render(){
+document.getElementById('products').innerHTML=products.map((p,i)=>`<div class="card"><div class="em">${p.em}</div><b>${p.name}</b><span>KSh ${p.price}</span><button onclick="add(${i})">+ Ongeza</button></div>`).join('');
+let html='',total=0,count=0;
+for(let i in cart){let q=cart[i],p=products[i],sub=p.price*q;total+=q;count+=q;html+=`<div class="item"><span>${p.em} ${p.name} x ${q}</span><span>KSh ${sub} <button onclick="remove(${i})">✕</button></span></div>`}
+document.getElementById('cartList').innerHTML=html||'<p style="color:#888">Hakuna bidhaa bado.</p>';
+document.getElementById('total').textContent='KSh '+total;
+document.getElementById('count').textContent=count;
+let today=new Date().toDateString();
+let t=sales.filter(s=>new Date(s.time).toDateString()===today).reduce((a,s)=>a+s.total,0);
+document.getElementById('todaySales').textContent='Mauzo Leo: KSh '+t;
+document.getElementById('history').innerHTML=sales.slice(-8).reverse().map(s=>`• ${new Date(s.time).toLocaleTimeString()} - KSh ${s.total} (${s.method}) ${s.cust||''}`).join('<br>')||'Hakuna mauzo bado';
+}
+function add(i){cart[i]=(cart[i]||0)+1;render()}
+function remove(i){delete cart[i];render()}
+function clearCart(){cart={};render()}
+function clearHistory(){if(confirm('Futa historia yote?')){sales=[];localStorage.removeItem('maina_sales');render()}}
+function checkout(){
+let total=0,items=[];
+for(let i in cart){let p=products[i];total+=p.price*cart[i];items.push(p.name+' x '+cart[i])}
+if(!total)return alert('Kikapu kiko tupu!');
+let method=document.getElementById('payMethod').value;
+let cust=document.getElementById('cust').value;
+let paid=parseInt(document.getElementById('paid').value||total);
+let change=paid-total;
+sales.push({total,method,cust,time:Date.now(),items});
+localStorage.setItem('maina_sales',JSON.stringify(sales));
+let receipt=`MAINA ACCESSORIES\nMombasa\n----------------\n${items.join('\n')}\n----------------\nJumla: KSh ${total}\nMalipo: ${method}\nAlilipa: KSh ${paid}\nChange: KSh ${change>0?change:0}\nMteja: ${cust||'-'}\nAsante! Karibu Tena!`;
+alert(receipt);
+cart={};document.getElementById('paid').value='';document.getElementById('cust').value='';
+render();
+}
+render();
+</script></body></html>
